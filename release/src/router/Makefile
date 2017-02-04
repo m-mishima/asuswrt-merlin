@@ -613,6 +613,8 @@ obj-$(RTCONFIG_WEBDAV) += libexif
 
 obj-$(RTCONFIG_IXIAEP) += ixia_endpoint$(BCMEX)
 
+obj-$(RTCONFIG_ISCBIND) += iscbind
+
 # Add for ASUS Components
 obj-$(RTCONFIG_UPNPC) += miniupnpc
 obj-y += miniupnpd$(MUVER)
@@ -4632,6 +4634,37 @@ phddns-install: phddns
 phddns-clean:
 	@[ ! -f phddns/Makefile ] || $(MAKE) -C phddns clean
 	@rm -f phddns/stamp-h1
+
+iscbind/stamp-h1: openssl libxml2
+	# need PATH to exec `xml2-config`
+	cd $(TOP)/iscbind && CC=$(CC) STRIP=$(STRIP) \
+	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections \
+		-L$(TOP)/libxml2/.libs -L$(STAGEDIR)/usr/lib -L$(TOP)/openssl" \
+	LIBS='-lxml2 -lssl -lcrypto -lpthread -ldl -lm' \
+	PATH="${PATH}:$(TOP)/libxml2" \
+	BUILD_CC="gcc" \
+	$(CONFIGURE) --prefix=/usr --enable-ipv6 --with-randomdev=/dev/random --with-ecdsa=yes --with-gost=no --with-libxml2=$(TOP)/libxml2/.libs \
+# --with-gost option need to openssl/engines/libgost.so
+	touch iscbind/stamp-h1
+
+iscbind: iscbind/stamp-h1
+	@$(MAKE) -C iscbind CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) BUILD_CC="gcc" $(PARALLEL_BUILD)
+
+iscbind-clean:
+	-@$(MAKE) -C iscbind clean
+	@rm -f iscbind/stamp-h1
+
+iscbind-install: iscbind iscbind/bin/named/named iscbind/bin/rndc/rndc iscbind/bin/nsupdate/nsupdate iscbind/bin/tools/named-journalprint
+	install -d $(INSTALLDIR)/iscbind/usr/sbin
+	libtool --mode=install install -c iscbind/bin/named/named $(INSTALLDIR)/iscbind/usr/sbin
+	$(STRIP) $(INSTALLDIR)/iscbind/usr/sbin/named
+	libtool --mode=install install -c iscbind/bin/rndc/rndc $(INSTALLDIR)/iscbind/usr/sbin
+	$(STRIP) $(INSTALLDIR)/iscbind/usr/sbin/rndc
+	libtool --mode=install install -c iscbind/bin/nsupdate/nsupdate $(INSTALLDIR)/iscbind/usr/sbin
+	$(STRIP) $(INSTALLDIR)/iscbind/usr/sbin/nsupdate
+	libtool --mode=install install -c iscbind/bin/tools/named-journalprint $(INSTALLDIR)/iscbind/usr/sbin
+	$(STRIP) $(INSTALLDIR)/iscbind/usr/sbin/named-journalprint
 
 #
 # Generic rules
