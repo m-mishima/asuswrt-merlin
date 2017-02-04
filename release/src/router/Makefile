@@ -613,6 +613,8 @@ obj-$(RTCONFIG_WEBDAV) += libexif
 
 obj-$(RTCONFIG_IXIAEP) += ixia_endpoint$(BCMEX)
 
+obj-$(RTCONFIG_RADVD) += radvd
+
 # Add for ASUS Components
 obj-$(RTCONFIG_UPNPC) += miniupnpc
 obj-y += miniupnpd$(MUVER)
@@ -4632,6 +4634,29 @@ phddns-install: phddns
 phddns-clean:
 	@[ ! -f phddns/Makefile ] || $(MAKE) -C phddns clean
 	@rm -f phddns/stamp-h1
+
+radvd/stamp-h1: shared shared/ifaddrs.o
+	cd $(TOP)/radvd && CC=$(CC) STRIP=$(STRIP) \
+	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -std=gnu99" \
+	LDFLAGS="$(EXTRALDFLAGS) $(EXTRALDFLAGS2) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	$(CONFIGURE) --prefix=/usr
+	touch radvd/stamp-h1
+
+radvd: radvd/stamp-h1
+	@$(MAKE) -C radvd CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) $(PARALLEL_BUILD)
+
+radvd-clean:
+	-@$(MAKE) -C radvd clean
+	@rm -f radvd/stamp-h1
+
+radvd-install: radvd/radvd radvd/radvdump radvd/radvd.conf.example
+	install -d $(INSTALLDIR)/radvd/usr/sbin
+	install -d $(INSTALLDIR)/radvd/etc
+	libtool --mode=install install -c radvd/radvd $(INSTALLDIR)/radvd/usr/sbin
+	install -c -m 777 radvd/radvd.conf.example $(INSTALLDIR)/radvd/etc/radvd.conf
+	libtool --mode=install install -c radvd/radvdump $(INSTALLDIR)/radvd/usr/sbin
+	$(STRIP) $(INSTALLDIR)/radvd/usr/sbin/radvd
+	$(STRIP) $(INSTALLDIR)/radvd/usr/sbin/radvdump
 
 #
 # Generic rules
