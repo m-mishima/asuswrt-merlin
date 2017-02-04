@@ -18,7 +18,7 @@ config RTCONFIG_EAPOL
 	default y
 
 config RTCONFIG_TELENET
-	bool "TELENET"
+	bool "TELENET
 	default y
 
 config RTCONFIG_PPTPD
@@ -1142,4 +1142,8 @@ config RTCONFIG_DEFLAN50
 config RTCONFIG_WLCEVENTD
 	bool "BRCM WLC_E event monitor"
 	depends on RTCONFIG_BCMARM && RTCONFIG_BCMWL6
+	default n
+
+config RTCONFIG_ISCDHCP
+	bool "ISC DHCP server and relay"
 	default n

@@ -613,6 +613,8 @@ obj-$(RTCONFIG_WEBDAV) += libexif
 
 obj-$(RTCONFIG_IXIAEP) += ixia_endpoint$(BCMEX)
 
+obj-$(RTCONFIG_ISCDHCP) += iscdhcp
+
 # Add for ASUS Components
 obj-$(RTCONFIG_UPNPC) += miniupnpc
 obj-y += miniupnpd$(MUVER)
@@ -4632,6 +4634,31 @@ phddns-install: phddns
 phddns-clean:
 	@[ ! -f phddns/Makefile ] || $(MAKE) -C phddns clean
 	@rm -f phddns/stamp-h1
+
+iscdhcp/stamp-h1:
+	cd $(TOP)/iscdhcp && CC=$(CC) STRIP=$(STRIP) \
+	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	BUILD_CC="gcc" \
+	$(CONFIGURE) --prefix=/usr --enable-ipv6 --with-randomdev=/dev/random
+	touch iscdhcp/stamp-h1
+
+iscdhcp: iscdhcp/stamp-h1 bind/lib/export/configure bind/stamp-h1
+	@$(MAKE) -C iscdhcp CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) BUILD_CC="gcc"
+
+iscdhcp-clean:
+	-@$(MAKE) -C iscdhcp clean
+	@rm -f iscdhcp/stamp-h1
+
+iscdhcp-install: iscdhcp iscdhcp/server/dhcpd iscdhcp/relay/dhcrelay iscdhcp/dhcpctl/omshell
+	install -d $(INSTALLDIR)/iscdhcp/usr/bin
+	install -d $(INSTALLDIR)/iscdhcp/usr/sbin
+	libtool --mode=install install -c iscdhcp/server/dhcpd $(INSTALLDIR)/iscdhcp/usr/sbin
+	$(STRIP) $(INSTALLDIR)/iscdhcp/usr/sbin/dhcpd
+	libtool --mode=install install -c iscdhcp/relay/dhcrelay $(INSTALLDIR)/iscdhcp/usr/sbin
+	$(STRIP) $(INSTALLDIR)/iscdhcp/usr/sbin/dhcrelay
+	libtool --mode=install install -c iscdhcp/dhcpctl/omshell $(INSTALLDIR)/iscdhcp/usr/bin
+	$(STRIP) $(INSTALLDIR)/iscdhcp/usr/bin/omshell
 
 #
 # Generic rules
